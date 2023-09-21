@@ -1,0 +1,195 @@
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2023-09-20T03:40:00Z"
+  generateName: kube-flannel-ds-
+  labels:
+    app: flannel
+    controller-revision-hash: 6b6b7b99d
+    pod-template-generation: "1"
+    tier: node
+  name: kube-flannel-ds-8lsp4
+  namespace: kube-flannel
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: DaemonSet
+      name: kube-flannel-ds
+      uid: 37a6bb64-0919-43b8-8b81-6cb2e4881535
+  resourceVersion: "2466"
+  uid: 8e8ced93-9d66-4e96-a022-a446bed07fcf
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchFields:
+              - key: metadata.name
+                operator: In
+                values:
+                  - controlplane
+  containers:
+    - args:
+        - --ip-masq
+        - --kube-subnet-mgr
+        - --iface=eth0
+      command:
+        - /opt/bin/flanneld
+      env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: EVENT_QUEUE_DEPTH
+          value: "5000"
+        image: docker.io/rancher/mirrored-flannelcni-flannel:v0.19.2
+        imagePullPolicy: IfNotPresent
+        name: kube-flannel
+        resources:
+          limits:
+            cpu: 100m
+            memory: 50Mi
+          requests:
+            cpu: 100m
+            memory: 50Mi
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+            - NET_RAW
+          privileged: false
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /run/flannel
+          name: run
+        - mountPath: /etc/kube-flannel/
+          name: flannel-cfg
+        - mountPath: /run/xtables.lock
+          name: xtables-lock
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access-g4k6m
+          readOnly: true
+      dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  hostNetwork: true
+  initContainers:
+  - args:
+    - -f
+    - /flannel
+    - /opt/cni/bin/flannel
+    command:
+    - cp
+    image: docker.io/rancher/mirrored-flannelcni-flannel-cni-plugin:v1.1.0
+    imagePullPolicy: IfNotPresent
+    name: install-cni-plugin
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /opt/cni/bin
+      name: cni-plugin
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-g4k6m
+      readOnly: true
+  - args:
+    - -f
+    - /etc/kube-flannel/cni-conf.json
+    - /etc/cni/net.d/10-flannel.conflist
+    command:
+    - cp
+    image: docker.io/rancher/mirrored-flannelcni-flannel:v0.19.2
+    imagePullPolicy: IfNotPresent
+    name: install-cni
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /etc/cni/net.d
+      name: cni
+    - mountPath: /etc/kube-flannel/
+      name: flannel-cfg
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-g4k6m
+      readOnly: true
+  nodeName: controlplane
+  preemptionPolicy: PreemptLowerPriority
+  priority: 2000001000
+  priorityClassName: system-node-critical
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: flannel
+  serviceAccountName: flannel
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoSchedule
+    operator: Exists
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/disk-pressure
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/memory-pressure
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/pid-pressure
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/unschedulable
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/network-unavailable
+    operator: Exists
+  volumes:
+  - hostPath:
+      path: /run/flannel
+      type: ""
+    name: run
+  - hostPath:
+      path: /opt/cni/bin
+      type: ""
+    name: cni-plugin
+  - hostPath:
+      path: /etc/cni/net.d
+      type: ""
+    name: cni
+  - configMap:
+      defaultMode: 420
+      name: kube-flannel-cfg
+    name: flannel-cfg
+  - hostPath:
+      path: /run/xtables.lock
+      type: FileOrCreate
+    name: xtables-lock
+  - name: kube-api-access-g4k6m
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace

@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: podtest2
+  labels:
+    app: frontend
+    env: dev
+spec:
+  containers:
+  - image: nginx:alpine
+    name: const1
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: podtest3
+  labels:
+    app: backend
+    env: dev
+spec:
+  containers:
+  - image: python:3.12-rc-alpine3.17
+    name: const1
+    command: ['sh', '-c', 'echo "const1" > index.html && python3 -m http.server 8082']
+  - image: python:3.12-rc-alpine3.17
+    name: const2
+    command: ['sh', '-c', 'echo "const1" > index.html && python3 -m http.server 8083']

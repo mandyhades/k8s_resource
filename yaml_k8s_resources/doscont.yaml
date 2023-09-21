@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app: myapp
+spec:
+  containers:
+  - image: python:3.12-rc-alpine3.17
+    name: const1
+    command: ['sh', '-c', 'echo "const1" > index.html && python3 -m http.server 8082']
+  - image: python:3.12-rc-alpine3.17
+    name: const2
+    command: ['sh', '-c', 'echo "const1" > index.html && python3 -m http.server 8083']

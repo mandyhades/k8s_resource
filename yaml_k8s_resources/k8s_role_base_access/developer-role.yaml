@@ -1,0 +1,34 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: developer
+rules:
+  - verbs: ["list", "get", "create", "update", "delete"]
+    apiGroups: [""]
+    resources: ["pods"]
+  - verbs: ["create"]
+    apiGroups: [""]
+    resources: ["ConfigMap"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: devuser-developer-binding
+subjects:
+  - kind: User
+    name: dev-user
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: development
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: developer
+rules:
+  - verbs: ["get", "create", "update"]
+    apiGroups: [""]
+    resources: ["pods"]
+    resourceNames: ["blue", "orange"]
